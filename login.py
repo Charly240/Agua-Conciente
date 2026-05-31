@@ -124,9 +124,9 @@ def mostrar_login(page: ft.Page):
             abrir_app("Usuario de prueba")
 
         def accion_principal(e):
-            correo_usuario = correo.value.strip().lower()
+            correo_usuario = correo.value.strip()
             password_usuario = contrasena.value.strip()
-            print("El Usuario es:"+ correo_usuario + "la contraseña es:" + password_usuario)
+            print("Funcion accion_principal - El Usuario es:"+ correo_usuario + "la contraseña es:" + password_usuario)
             if correo_usuario == "" or password_usuario == "":
                 mensaje.value = "Llena todos los campos"
                 mensaje.color = ft.Colors.RED
@@ -169,6 +169,7 @@ def mostrar_login(page: ft.Page):
 
             else:
                 usuario_db = validar_en_bd(correo_usuario, password_usuario)
+                print("Entro al Else de Accion_Principal, Usuario validado en BD:", usuario_db)
 
                 if usuario_db:
                     abrir_app(usuario_db.get("nombre", correo_usuario))

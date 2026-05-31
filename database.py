@@ -16,23 +16,24 @@ if not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def validar_usuario(correo_usuario, password_usuario):
-    print("Entramos a Funcion validar usuario"+ correo_usuario + "password" + password_usuario )
+    print(f"DEBUG: Intentando validar usuario: '{correo_usuario}'")
     try:
+        # Buscamos por correo O por nombre (por si el usuario ingresó su nombre)
         respuesta = (
             supabase
             .table("usuario")
             .select("id_usuario, nombre, correo, contrasena")
-            .eq("nombre", correo_usuario)
+            .or_(f"correo.ilike.{correo_usuario},nombre.ilike.{correo_usuario}")
             .limit(1)
             .execute()
         )
 
         if not respuesta.data:
-            print("ENtro al if not respuesta data")
+            print(f"DEBUG: No se encontró ningún usuario con: '{correo_usuario}'")
             return None
 
         usuario = respuesta.data[0]
-        print(usuario)
+        print(f"DEBUG: Usuario encontrado: {usuario['nombre']} ({usuario['correo']})")
 
         # Comparación simple porque tu tabla tiene la columna contrasena
         if usuario["contrasena"] == password_usuario:

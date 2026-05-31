@@ -11,4 +11,4 @@ def main(page: ft.Page):
     mostrar_login(page)
 
 
-ft.app(target=main)
+ft.app(main)
