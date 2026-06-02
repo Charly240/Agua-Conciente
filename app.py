@@ -16,10 +16,19 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
     page.horizontal_alignment = ft.CrossAxisAlignment.START
     page.vertical_alignment = ft.MainAxisAlignment.START
 
+    #if isinstance(usuario_actual, dict):
+        #nombre_usuario = usuario_actual.get("nombre", "Usuario")
+    #else:
+        #nombre_usuario = usuario_actual
     if isinstance(usuario_actual, dict):
+        id_usuario_actual = usuario_actual.get("id_usuario")
         nombre_usuario = usuario_actual.get("nombre", "Usuario")
+        correo_usuario = usuario_actual.get("correo", "")
+
     else:
+        id_usuario_actual = None
         nombre_usuario = usuario_actual
+        correo_usuario = ""
 
     estado = {
         "vista": "inicio",
@@ -30,14 +39,6 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         "hilo_iniciado": False,
     }
 
-    habitos = [
-        "Cerrar la llave al cepillarse los dientes",
-        "Reducir el tiempo de baño",
-        "Revisar fugas",
-        "Reutilizar agua",
-        "Evitar usar manguera",
-        "Usar lavadora con carga completa",
-    ]
 
     recordatorios = [
         {
@@ -104,7 +105,30 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             "icono": ft.Icons.CHECK_CIRCLE,
         },
     ]
+    def cargar_habitos():
+        try:
+            from database import obtener_habitos
 
+            datos = obtener_habitos()
+
+            if datos:
+                return datos
+
+        except Exception as error:
+            print("Error al cargar hábitos:", error)
+
+        return [
+            {"id_habito": 1, "nombre_habito": "Cerrar la llave al cepillarse los dientes"},
+            {"id_habito": 2, "nombre_habito": "Reducir el tiempo de baño"},
+            {"id_habito": 3, "nombre_habito": "Revisar fugas"},
+            {"id_habito": 4, "nombre_habito": "Reutilizar agua"},
+            {"id_habito": 5, "nombre_habito": "Evitar usar manguera"},
+            {"id_habito": 6, "nombre_habito": "Usar lavadora con carga completa"},
+        ]
+
+
+    habitos =cargar_habitos()
+    
     def alto_menu():
         try:
             return max(720, page.window_height or 720)
@@ -578,25 +602,52 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         page.update()
 
     def guardar_registro(e):
+        if id_usuario_actual is None:
+            mensaje("No se encontró el usuario logueado.")
+            return
+
         if len(estado["habitos_seleccionados"]) == 0:
             mensaje("Selecciona al menos un hábito antes de guardar.")
             return
 
-        registro = {
+        ids_habitos = [
+            habitos[i]["id_habito"]
+            for i in sorted(estado["habitos_seleccionados"])
+            ]
+
+        nombres_habitos = [
+            habitos[i]["nombre_habito"]
+            for i in sorted(estado["habitos_seleccionados"])
+            ]
+
+        try:
+            from database import guardar_registro_habitos
+
+            exito, respuesta = guardar_registro_habitos(
+                id_usuario_actual,
+                ids_habitos
+            )
+
+            if not exito:
+                mensaje(respuesta)
+                return
+
+        except Exception as error:
+            mensaje(f"Error al guardar en la base de datos: {error}")
+            return
+
+        registro_local = {
             "fecha": date.today().strftime("%d/%m/%Y"),
             "hora": datetime.now().strftime("%H:%M"),
-            "habitos": [
-                habitos[i]
-                for i in sorted(estado["habitos_seleccionados"])
-            ],
-        }
+            "habitos": nombres_habitos,
+    }
 
-        estado["registros"].append(registro)
+        estado["registros"].append(registro_local)
         estado["habitos_seleccionados"].clear()
 
         enviar_notificacion(
             "¡Buen trabajo!",
-            "Registro guardado. Sigue acumulando hábitos de ahorro de agua.",
+            "Registro guardado en la base de datos.",
             ft.Icons.CHECK_CIRCLE,
         )
 
@@ -632,7 +683,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                             ),
                             ft.Divider(),
                             *[
-                                fila_habito(i, h)
+                                fila_habito(i, h["nombre_habito"])
                                 for i, h in enumerate(habitos)
                             ],
                         ],
@@ -846,7 +897,16 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         )
 
     def vista_historial():
-        if len(estado["registros"]) == 0:
+        registros_bd = []
+
+        if id_usuario_actual is not None:
+            try:
+                from database import obtener_historial_usuario
+                registros_bd = obtener_historial_usuario(id_usuario_actual)
+            except Exception as error:
+                print("Error al cargar historial desde BD:", error)
+
+        if len(registros_bd) == 0:
             historial = tarjeta(
                 color=ft.Colors.BLUE_50,
                 content=ft.Column(
@@ -867,29 +927,37 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                     spacing=12,
                 ),
             )
+
         else:
+            registros_por_fecha = {}
+
+            for registro in registros_bd:
+                fecha = registro.get("fecha", "Sin fecha")
+
+                habito = registro.get("habito")
+
+                if isinstance(habito, dict):
+                    nombre_habito = habito.get("nombre_habito", "Hábito sin nombre")
+                else:
+                    nombre_habito = "Hábito sin nombre"
+
+                if fecha not in registros_por_fecha:
+                    registros_por_fecha[fecha] = []
+
+                registros_por_fecha[fecha].append(nombre_habito)
+
             tarjetas_historial = []
 
-            for registro in reversed(estado["registros"]):
+            for fecha, lista_habitos in registros_por_fecha.items():
                 tarjetas_historial.append(
                     tarjeta(
                         content=ft.Column(
                             controls=[
-                                ft.Row(
-                                    controls=[
-                                        ft.Text(
-                                            f"{registro['fecha']} - {registro['hora']}",
-                                            size=17,
-                                            weight=ft.FontWeight.BOLD,
-                                            color=ft.Colors.BLUE_900,
-                                        ),
-                                        ft.Text(
-                                            f"{len(registro['habitos'])} hábitos cumplidos",
-                                            size=14,
-                                            color=ft.Colors.BLUE_600,
-                                        ),
-                                    ],
-                                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                ft.Text(
+                                    f"Fecha: {fecha}",
+                                    size=17,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=ft.Colors.BLUE_900,
                                 ),
                                 ft.Divider(),
                                 *[
@@ -901,14 +969,14 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                                                 size=18,
                                             ),
                                             ft.Text(
-                                                h,
+                                                habito,
                                                 size=14,
                                                 color=ft.Colors.BLUE_GREY_800,
                                             ),
                                         ],
                                         spacing=8,
                                     )
-                                    for h in registro["habitos"]
+                                    for habito in lista_habitos
                                 ],
                             ],
                             spacing=8,

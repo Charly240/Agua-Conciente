@@ -82,3 +82,68 @@ def registrar_usuario(nombre, correo, contrasena):
 
     except Exception as error:
         return False, f"Error al registrar usuario: {error}"
+    
+def obtener_habitos():
+    try:
+        respuesta = (
+            supabase
+            .table("habito")
+            .select("id_habito, nombre_habito, descripcion, categoria, activo")
+            .eq("activo", True)
+            .execute()
+        )
+
+        return respuesta.data if respuesta.data else []
+
+    except Exception as error:
+        print("Error al obtener hábitos:", error)
+        return []
+
+
+def guardar_registro_habitos(id_usuario, ids_habitos):
+    try:
+        registros = []
+
+        for id_habito in ids_habitos:
+            registros.append({
+                "id_usuario": id_usuario,
+                "id_habito": id_habito,
+                "realizado": True,
+                "observaciones": None,
+            })
+
+        respuesta = (
+            supabase
+            .table("registro_habito")
+            .insert(registros)
+            .execute()
+        )
+
+        if respuesta.data:
+            return True, "Registro guardado correctamente"
+
+        return False, "No se pudo guardar el registro"
+
+    except Exception as error:
+        print("Error al guardar registro de hábitos:", error)
+        return False, f"Error al guardar registro: {error}"
+
+
+def obtener_historial_usuario(id_usuario):
+    try:
+        respuesta = (
+            supabase
+            .table("registro_habito")
+            .select(
+                "id_registro, fecha, realizado, observaciones, "
+                "habito(id_habito, nombre_habito, descripcion, categoria)"
+            )
+            .eq("id_usuario", id_usuario)
+            .execute()
+        )
+
+        return respuesta.data if respuesta.data else []
+
+    except Exception as error:
+        print("Error al obtener historial:", error)
+        return []
