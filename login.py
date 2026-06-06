@@ -17,9 +17,9 @@ def mostrar_login(page: ft.Page):
             "focused_border_color": ft.Colors.BLUE_600,
         }
 
-    def abrir_app(nombre_usuario):
+    def abrir_app(usuario):
         from app import mostrar_app
-        mostrar_app(page, nombre_usuario)
+        mostrar_app(page, usuario)
 
     def registrar_en_bd(nombre, correo, contrasena):
         try:
@@ -60,14 +60,13 @@ def mostrar_login(page: ft.Page):
             return False, f"Error al registrar: {error}"
 
     def validar_en_bd(correo, contrasena):
-        print("Funcion entro validar en bd y el usuario y contraseña son:"+ correo + "y la contraseña es" + contrasena)
-        #breakpoint()
         try:
             from database import validar_usuario
-            print("Sí se importó validar_usuario desde database.py")
+
+            correo = correo.strip().lower()
+            contrasena = contrasena.strip()
 
             usuario = validar_usuario(correo, contrasena)
-            print(usuario)
 
             if usuario:
                 return usuario
@@ -126,7 +125,9 @@ def mostrar_login(page: ft.Page):
         def accion_principal(e):
             correo_usuario = correo.value.strip().lower()
             password_usuario = contrasena.value.strip()
-            print("El Usuario es:"+ correo_usuario + "la contraseña es:" + password_usuario)
+
+            print("Intentando iniciar sesión con:", correo_usuario)
+            
             if correo_usuario == "" or password_usuario == "":
                 mensaje.value = "Llena todos los campos"
                 mensaje.color = ft.Colors.RED
@@ -171,7 +172,7 @@ def mostrar_login(page: ft.Page):
                 usuario_db = validar_en_bd(correo_usuario, password_usuario)
 
                 if usuario_db:
-                    abrir_app(usuario_db.get("nombre", correo_usuario))
+                    abrir_app(usuario_db)
                     return
                 else:
                     mensaje.value = "Correo o contraseña incorrectos"
