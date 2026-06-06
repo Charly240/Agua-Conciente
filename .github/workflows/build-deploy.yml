@@ -36,7 +36,7 @@ jobs:
 
       - name: Construir versión web con Flet
         run: |
-          flet build web --yes --verbose --base-url ${GITHUB_REPOSITORY#*/} --route-url-strategy hash
+        flet build web app.py --yes --verbose --base-url ${GITHUB_REPOSITORY#*/} --route-url-strategy hash
 
       - name: Subir archivos a GitHub Pages
         uses: actions/upload-pages-artifact@v3
