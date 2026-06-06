@@ -35,8 +35,10 @@ jobs:
           pip install -r requirements.txt
 
       - name: Construir versión web con Flet
+        env:
+          BASE_URL: ${{ github.event.repository.name }}
         run: |
-        flet build web app.py --yes --verbose --base-url ${GITHUB_REPOSITORY#*/} --route-url-strategy hash
+          flet build web app.py --yes --verbose --base-url "$BASE_URL" --route-url-strategy hash
 
       - name: Subir archivos a GitHub Pages
         uses: actions/upload-pages-artifact@v3
