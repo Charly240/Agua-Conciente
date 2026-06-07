@@ -58,21 +58,48 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
     }
 
     estado = {
-        "vista": "inicio",
-        "habitos_seleccionados": set(),
-        "habitos_configuracion": set(),
-        "habitos_registro": [],
-        "modo_registro": "auto",
-        "registros": [],
-        "notificaciones": [],
-        "recordatorios_activos": True,
-        "hilo_iniciado": False,
+    "vista": "inicio",
+    "habitos_seleccionados": set(),
+    "habitos_configuracion": set(),
+    "habitos_registro": [],
+    "modo_registro": "auto",
+    "registros": [],
+    "notificaciones": [],
+    "recordatorios_activos": True,
+    "hilo_iniciado": False,
 
-        "frecuencia_recordatorios": "2 veces al día",
-        "intervalo_recordatorios": 12 * 60 * 60,
-        "ultimo_recordatorio": time.time(),
-    }
+    "frecuencia_recordatorios": "2 veces al día",
+    "intervalo_recordatorios": 12 * 60 * 60,
+    "ultimo_recordatorio": time.time(),
+}
 
+    try:
+        from database import obtener_configuracion_recordatorio
+
+        config_recordatorio = obtener_configuracion_recordatorio(id_usuario_actual)
+
+        if config_recordatorio:
+            estado["recordatorios_activos"] = config_recordatorio.get(
+                "recordatorios_activos",
+                True
+            )
+
+            estado["frecuencia_recordatorios"] = config_recordatorio.get(
+                "frecuencia",
+                "2 veces al día"
+            )
+
+            estado["intervalo_recordatorios"] = int(
+                config_recordatorio.get("intervalo_horas", 12)
+            ) * 60 * 60
+
+            print("Configuración cargada desde Supabase:", config_recordatorio)
+
+    except Exception as error:
+        print("Error al cargar configuración de recordatorio:", error)
+
+
+    dropdown_frecuencia_ref = {"control": None}
 
     recordatorios = [
         {
@@ -315,20 +342,114 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             r["icono"],
         )
 
+        try:
+            from database import programar_correo_prueba
+
+            exito, respuesta = programar_correo_prueba(id_usuario_actual)
+            print(respuesta)
+
+            enviar_notificacion(
+                "Correo de prueba programado",
+                "El correo llegará cuando Supabase Cron ejecute la revisión.",
+                ft.Icons.EMAIL,
+            )
+
+        except Exception as error:
+            print("Error al programar correo de prueba:", error)
+            enviar_notificacion(
+                "Error al programar correo",
+                "No se pudo programar el correo de prueba.",
+                ft.Icons.ERROR,
+            )
+
         if estado["vista"] == "seguimiento":
             vista_seguimiento()
             page.update()
 
+    def cambiar_recordatorios(e):
+        estado["recordatorios_activos"] = e.control.value
+
+        dropdown = dropdown_frecuencia_ref.get("control")
+
+        if dropdown is not None and dropdown.value:
+            frecuencia_actual = dropdown.value
+        else:
+            frecuencia_actual = estado.get("frecuencia_recordatorios", "2 veces al día")
+
+        if frecuencia_actual not in opciones_frecuencia:
+            frecuencia_actual = "2 veces al día"
+
+        intervalo_actual = opciones_frecuencia[frecuencia_actual]
+
+        estado["frecuencia_recordatorios"] = frecuencia_actual
+        estado["intervalo_recordatorios"] = intervalo_actual
+
+        print("SWITCH - frecuencia guardada:", frecuencia_actual)
+        print("SWITCH - intervalo guardado:", int(intervalo_actual / 3600))
+
+        try:
+            from database import guardar_configuracion_recordatorio
+
+            exito, respuesta = guardar_configuracion_recordatorio(
+                id_usuario_actual,
+                correo_usuario,
+                estado["recordatorios_activos"],
+                frecuencia_actual,
+                int(intervalo_actual / 3600),
+            )
+
+            print(respuesta)
+
+        except Exception as error:
+            print("Error al guardar recordatorio en Supabase:", error)
+
+        if estado["recordatorios_activos"]:
+            enviar_notificacion(
+                "Recordatorios activados",
+                "Te enviaremos avisos para seguir cuidando el agua.",
+                ft.Icons.NOTIFICATIONS_ACTIVE,
+            )
+        else:
+            enviar_notificacion(
+                "Recordatorios desactivados",
+                "Puedes volver a activarlos desde Seguimiento.",
+                ft.Icons.NOTIFICATIONS_OFF,
+            )
+
+        cambiar_vista(estado["vista"])
+
     def cambiar_frecuencia_recordatorios(e):
         frecuencia = e.control.value
+
+        if frecuencia not in opciones_frecuencia:
+            frecuencia = "2 veces al día"
 
         estado["frecuencia_recordatorios"] = frecuencia
         estado["intervalo_recordatorios"] = opciones_frecuencia[frecuencia]
         estado["ultimo_recordatorio"] = time.time()
 
+        print("DROPDOWN - frecuencia seleccionada:", frecuencia)
+        print("DROPDOWN - intervalo:", int(estado["intervalo_recordatorios"] / 3600))
+
+        try:
+            from database import guardar_configuracion_recordatorio
+
+            exito, respuesta = guardar_configuracion_recordatorio(
+                id_usuario_actual,
+                correo_usuario,
+                estado["recordatorios_activos"],
+                estado["frecuencia_recordatorios"],
+                int(estado["intervalo_recordatorios"] / 3600),
+            )
+
+            print(respuesta)
+
+        except Exception as error:
+            print("Error al guardar frecuencia en Supabase:", error)
+
         enviar_notificacion(
             "Frecuencia actualizada",
-            f"Los recordatorios ahora se enviarán: {frecuencia}.",
+            f"Los recordatorios por correo se enviarán: {frecuencia}.",
             ft.Icons.SCHEDULE,
         )
 
@@ -351,19 +472,28 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
 
         dropdown.on_change = cambiar_frecuencia_recordatorios
 
+        dropdown_frecuencia_ref["control"] = dropdown
+
         return dropdown
 
     def obtener_estadisticas():
-        dias = len(estado["registros"])
-        cumplidos = sum(len(r["habitos"]) for r in estado["registros"])
-        puntos = cumplidos * 10
+        try:
+            from database import obtener_estadisticas_usuario
 
-        if dias == 0:
-            avance = 0
-        else:
-            avance = int((cumplidos / (dias * len(habitos))) * 100)
+            estadisticas = obtener_estadisticas_usuario(id_usuario_actual)
 
-        return dias, cumplidos, puntos, avance
+            return {
+                "dias": estadisticas["dias_registrados"],
+                "cumplidos": estadisticas["habitos_cumplidos"],
+            }
+
+        except Exception as error:
+            print("Error al cargar estadísticas desde Supabase:", error)
+
+            return {
+                "dias": 0,
+                "cumplidos": 0,
+            }
 
     def item_menu(texto, icono, vista):
         seleccionado = estado["vista"] == vista
@@ -489,23 +619,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                 ),
             ),
         )
-    def cambiar_recordatorios(e):
-        estado["recordatorios_activos"] = e.control.value
 
-        if estado["recordatorios_activos"]:
-            enviar_notificacion(
-                "Recordatorios activados",
-                "Te avisaremos para seguir cuidando el agua.",
-                ft.Icons.NOTIFICATIONS_ACTIVE,
-            )
-        else:
-            enviar_notificacion(
-                "Recordatorios desactivados",
-                "Puedes volver a activarlos cuando quieras.",
-                ft.Icons.NOTIFICATIONS_OFF,
-            )
-
-        cambiar_vista(estado["vista"])
 
     def vista_inicio():
         contenido.content = ft.Column(
@@ -1105,16 +1219,28 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         return columna
 
     def vista_seguimiento():
-        dias, cumplidos, puntos, avance = obtener_estadisticas()
+        estadisticas = obtener_estadisticas()
+
+        dias = estadisticas.get("dias", 0)
+        cumplidos = estadisticas.get("cumplidos", 0)
 
         if dias == 0:
-            texto_avance = (
-                "Aún no tienes registros. Comienza a registrar tus hábitos para ver tu progreso."
+            mensaje_progreso = tarjeta(
+                content=ft.Text(
+                    "Aún no tienes registros. Comienza a registrar tus hábitos para ver tu progreso.",
+                    size=14,
+                    color=ft.Colors.BLUE_700,
+                ),
+                color=ft.Colors.BLUE_50,
             )
         else:
-            texto_avance = (
-                f"Has registrado {dias} día(s), cumplido {cumplidos} hábito(s) "
-                f"y acumulado {puntos} puntos de ahorro."
+            mensaje_progreso = tarjeta(
+                content=ft.Text(
+                    "Tu progreso se está calculando con base en tus registros guardados.",
+                    size=14,
+                    color=ft.Colors.GREEN_700,
+                ),
+                color=ft.Colors.GREEN_50,
             )
 
         contenido.content = ft.Column(
@@ -1136,31 +1262,11 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                             ft.Icons.CHECK_CIRCLE,
                             ft.Colors.CYAN_600,
                         ),
-                        tarjeta_estadistica(
-                            "Puntos de ahorro",
-                            puntos,
-                            ft.Icons.STAR,
-                            ft.Colors.LIGHT_BLUE_600,
-                        ),
-                        tarjeta_estadistica(
-                            "Avance general",
-                            f"{avance}%",
-                            ft.Icons.SHOW_CHART,
-                            ft.Colors.DEEP_PURPLE_400,
-                        ),
                     ],
                     spacing=20,
                 ),
 
-                tarjeta(
-                    color=ft.Colors.BLUE_50,
-                    content=ft.Text(
-                        texto_avance,
-                        size=14,
-                        color=ft.Colors.BLUE_700,
-                        text_align=ft.TextAlign.CENTER,
-                    ),
-                ),
+                mensaje_progreso,
 
                 tarjeta(
                     content=ft.Column(
@@ -1181,6 +1287,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                                 ],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             ),
+
                             ft.Text(
                                 "La app enviará avisos para recordar hábitos de ahorro de agua durante el uso.",
                                 size=13,
@@ -1194,6 +1301,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                                 icon=ft.Icons.NOTIFICATIONS_ACTIVE,
                                 on_click=probar_notificacion,
                             ),
+
                             lista_notificaciones_recientes(),
                         ],
                         spacing=15,

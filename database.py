@@ -2,6 +2,8 @@ import os
 from datetime import date, datetime
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from datetime import datetime
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -192,6 +194,43 @@ def obtener_historial_usuario(id_usuario):
     except Exception as error:
         print("Error al obtener historial:", error)
         return []
+    
+def obtener_estadisticas_usuario(id_usuario):
+    try:
+        respuesta = (
+            supabase
+            .table("registro_habito")
+            .select("id_registro, id_usuario, id_habito, fecha, realizado")
+            .eq("id_usuario", id_usuario)
+            .eq("realizado", True)
+            .execute()
+        )
+
+        registros = respuesta.data if respuesta.data else []
+
+        fechas = set()
+
+        for r in registros:
+            fecha = r.get("fecha")
+
+            if fecha:
+                fechas.add(str(fecha).split("T")[0])
+
+        dias_registrados = len(fechas)
+        habitos_cumplidos = len(registros)
+
+        return {
+            "dias_registrados": dias_registrados,
+            "habitos_cumplidos": habitos_cumplidos,
+        }
+
+    except Exception as error:
+        print("Error al obtener estadísticas del usuario:", error)
+
+        return {
+            "dias_registrados": 0,
+            "habitos_cumplidos": 0,
+        }
 
 def guardar_habitos_usuario(id_usuario, ids_habitos):
     try:
@@ -267,3 +306,141 @@ def obtener_habitos_usuario(id_usuario):
     except Exception as error:
         print("Error al obtener hábitos del usuario:", error)
         return []
+    
+def guardar_configuracion_recordatorio(
+    id_usuario,
+    correo,
+    recordatorios_activos,
+    frecuencia,
+    intervalo_horas
+):
+    try:
+        ahora = datetime.now()
+
+        datos = {
+            "id_usuario": id_usuario,
+            "correo": correo,
+            "recordatorios_activos": recordatorios_activos,
+            "frecuencia": frecuencia,
+            "intervalo_horas": intervalo_horas,
+            "fecha_actualizacion": ahora.isoformat(),
+        }
+
+        if recordatorios_activos:
+            datos["proximo_envio"] = (ahora + timedelta(hours=intervalo_horas)).isoformat()
+        else:
+            datos["proximo_envio"] = None
+
+        respuesta = (
+            supabase
+            .table("usuario_recordatorio")
+            .upsert(datos, on_conflict="id_usuario")
+            .execute()
+        )
+
+        print("Configuración de recordatorio guardada:", respuesta.data)
+
+        if respuesta.data:
+            return True, "Configuración de recordatorio guardada"
+
+        return False, "No se pudo guardar la configuración"
+
+    except Exception as error:
+        print("Error al guardar configuración de recordatorio:", error)
+        return False, f"Error al guardar configuración: {error}"
+    
+    
+def cambiar_estado_recordatorio(id_usuario, correo, recordatorios_activos):
+    try:
+        from datetime import datetime, timedelta
+
+        # Buscar configuración actual del usuario
+        respuesta_actual = (
+            supabase
+            .table("usuario_recordatorio")
+            .select("frecuencia, intervalo_horas")
+            .eq("id_usuario", id_usuario)
+            .limit(1)
+            .execute()
+        )
+
+        if respuesta_actual.data:
+            config_actual = respuesta_actual.data[0]
+            frecuencia_actual = config_actual.get("frecuencia", "2 veces al día")
+            intervalo_horas_actual = config_actual.get("intervalo_horas", 12)
+        else:
+            frecuencia_actual = "2 veces al día"
+            intervalo_horas_actual = 12
+
+        ahora = datetime.now()
+
+        datos = {
+            "id_usuario": id_usuario,
+            "correo": correo,
+            "recordatorios_activos": recordatorios_activos,
+            "frecuencia": frecuencia_actual,
+            "intervalo_horas": intervalo_horas_actual,
+            "fecha_actualizacion": ahora.isoformat(),
+        }
+
+        if recordatorios_activos:
+            datos["proximo_envio"] = (ahora + timedelta(hours=intervalo_horas_actual)).isoformat()
+        else:
+            datos["proximo_envio"] = None
+
+        respuesta = (
+            supabase
+            .table("usuario_recordatorio")
+            .upsert(datos, on_conflict="id_usuario")
+            .execute()
+        )
+
+        print("Estado de recordatorio actualizado:", respuesta.data)
+
+        return True, "Estado de recordatorio actualizado"
+
+    except Exception as error:
+        print("Error al cambiar estado de recordatorio:", error)
+        return False, f"Error al cambiar estado: {error}"
+    
+    
+def obtener_configuracion_recordatorio(id_usuario):
+    try:
+        respuesta = (
+            supabase
+            .table("usuario_recordatorio")
+            .select("recordatorios_activos, frecuencia, intervalo_horas")
+            .eq("id_usuario", id_usuario)
+            .limit(1)
+            .execute()
+        )
+
+        if respuesta.data:
+            return respuesta.data[0]
+
+        return None
+
+    except Exception as error:
+        print("Error al obtener configuración de recordatorio:", error)
+        return None
+    
+def programar_correo_prueba(id_usuario):
+    try:
+        respuesta = (
+            supabase
+            .table("usuario_recordatorio")
+            .update({
+                "recordatorios_activos": True,
+                "proximo_envio": "2000-01-01T00:00:00+00:00"
+            })
+            .eq("id_usuario", id_usuario)
+            .execute()
+        )
+
+        print("Correo de prueba programado:", respuesta.data)
+
+        return True, "Correo de prueba programado. Llegará cuando se ejecute el cron."
+
+    except Exception as error:
+        print("Error al programar correo de prueba:", error)
+        return False, f"Error al programar correo de prueba: {error}"
