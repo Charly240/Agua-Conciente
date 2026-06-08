@@ -8,8 +8,8 @@ from zoneinfo import ZoneInfo
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("https://xchwinawzjtpueuomrdp.supabase.co")
-SUPABASE_KEY = os.getenv("sb_publishable_kympxAl4mI8Bq84ieW33Zg_dwxkORwlY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 if not SUPABASE_URL:
     raise ValueError("Falta SUPABASE_URL en el archivo .env")
@@ -18,9 +18,6 @@ if not SUPABASE_KEY:
     raise ValueError("Falta SUPABASE_KEY en el archivo .env")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 
 def obtener_fecha_hora_mexico():
         ahora = datetime.now(ZoneInfo("America/Mexico_City"))
