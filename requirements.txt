@@ -1,7 +1,7 @@
 flet==0.85.2
 flet-cli==0.85.2
 flet-web==0.85.2
-flet-desktop==0.85.2
 supabase
 python-dotenv
 bcrypt
+tzdata

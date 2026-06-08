@@ -4,11 +4,12 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from datetime import datetime
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_URL = os.getenv("https://xchwinawzjtpueuomrdp.supabase.co")
+SUPABASE_KEY = os.getenv("sb_publishable_kympxAl4mI8Bq84ieW33Zg_dwxkORwlY")
 
 if not SUPABASE_URL:
     raise ValueError("Falta SUPABASE_URL en el archivo .env")
@@ -17,6 +18,17 @@ if not SUPABASE_KEY:
     raise ValueError("Falta SUPABASE_KEY en el archivo .env")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+def obtener_fecha_hora_mexico():
+        ahora = datetime.now(ZoneInfo("America/Mexico_City"))
+
+        fecha_actual = ahora.date().isoformat()
+        hora_actual = ahora.strftime("%H:%M:%S")
+
+        return fecha_actual, hora_actual
 
 def validar_usuario(correo_usuario, password_usuario):
     try:
@@ -105,24 +117,19 @@ def obtener_habitos():
     
 def guardar_registro_habitos(id_usuario, ids_habitos):
     try:
-        registros = []
+        fecha_actual, hora_actual = obtener_fecha_hora_mexico()
 
-        # Fecha y hora tomadas del dispositivo donde se ejecuta la app
-        fecha_actual = date.today().isoformat()
-        hora_actual = datetime.now().strftime("%H:%M:%S")
+        registros = []
 
         for id_habito in ids_habitos:
             registros.append({
                 "id_usuario": id_usuario,
-                "id_habito": id_habito,
+                "id_habito": int(id_habito),
                 "fecha": fecha_actual,
                 "hora": hora_actual,
                 "realizado": True,
-                "observaciones": None,
+                "observaciones": None
             })
-
-        if not registros:
-            return False, "Selecciona al menos un hábito"
 
         respuesta = (
             supabase
@@ -131,17 +138,15 @@ def guardar_registro_habitos(id_usuario, ids_habitos):
             .execute()
         )
 
-        print("Registro guardado en BD:", respuesta.data)
-
         if respuesta.data:
             return True, "Registro guardado correctamente"
 
-        return False, "No se pudo guardar el registro"
+        return False, "No se pudieron guardar los hábitos"
 
     except Exception as error:
         print("Error al guardar registro de hábitos:", error)
         return False, f"Error al guardar registro: {error}"
-
+    
 def obtener_historial_usuario(id_usuario):
     try:
         respuesta_registros = (
