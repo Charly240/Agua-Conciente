@@ -171,6 +171,14 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         ancho = page.width or 1200
         return ancho < 1000
     
+    def ancho_movil():
+        ancho = page.width or 390
+        return max(ancho - 64, 300)
+
+
+    def ancho_tarjeta_movil():
+        return ancho_movil() if es_movil() else 220
+    
     def cargar_habitos():
         try:
             from database import obtener_habitos
@@ -590,6 +598,50 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         )
 
     def tarjeta_inicio(nombre, descripcion, icono, vista, color):
+        if es_movil():
+            return ft.Container(
+                width=ancho_movil(),
+                on_click=lambda e: cambiar_vista(vista),
+                content=tarjeta(
+                    height=None,
+                    content=ft.Row(
+                        controls=[
+                            ft.Container(
+                                width=58,
+                                height=58,
+                                border_radius=14,
+                                bgcolor=color,
+                                alignment=ft.Alignment(0, 0),
+                                content=ft.Icon(
+                                    icono,
+                                    color=ft.Colors.WHITE,
+                                    size=30,
+                                ),
+                            ),
+                            ft.Column(
+                                controls=[
+                                    ft.Text(
+                                        nombre,
+                                        size=18,
+                                        weight=ft.FontWeight.BOLD,
+                                        color=ft.Colors.BLUE_GREY_900,
+                                    ),
+                                    ft.Text(
+                                        descripcion,
+                                        size=13,
+                                        color=ft.Colors.BLUE_GREY_700,
+                                    ),
+                                ],
+                                spacing=6,
+                                expand=True,
+                            ),
+                        ],
+                        spacing=14,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    ),
+                ),
+            )
+
         return ft.Container(
             expand=True,
             on_click=lambda e: cambiar_vista(vista),
@@ -1036,8 +1088,16 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             else:
                 estado["modo_registro"] = "registrar"
 
+        ancho_card = ancho_movil() if es_movil() else 720
+
         # MODO 1: configurar hábitos
         if estado["modo_registro"] == "configurar":
+            boton_guardar_habitos = boton_principal(
+                "Guardar mis hábitos",
+                ft.Icons.SAVE,
+                guardar_configuracion_habitos,
+            )
+
             contenido.content = ft.Column(
                 controls=[
                     texto_titulo("Registro de hábitos"),
@@ -1046,23 +1106,41 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                     ),
 
                     tarjeta(
-                        width=720,
+                        width=ancho_card,
                         content=ft.Column(
                             controls=[
-                                ft.Row(
-                                    controls=[
-                                        ft.Text(
-                                            "Elige tus hábitos",
-                                            size=14,
-                                            color=ft.Colors.BLUE_GREY_600,
-                                        ),
-                                        ft.Text(
-                                            f"{len(estado['habitos_configuracion'])} seleccionados",
-                                            size=14,
-                                            color=ft.Colors.BLUE_600,
-                                        ),
-                                    ],
-                                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                (
+                                    ft.Column(
+                                        controls=[
+                                            ft.Text(
+                                                "Elige tus hábitos",
+                                                size=14,
+                                                color=ft.Colors.BLUE_GREY_600,
+                                            ),
+                                            ft.Text(
+                                                f"{len(estado['habitos_configuracion'])} seleccionados",
+                                                size=14,
+                                                color=ft.Colors.BLUE_600,
+                                            ),
+                                        ],
+                                        spacing=4,
+                                    )
+                                    if es_movil()
+                                    else ft.Row(
+                                        controls=[
+                                            ft.Text(
+                                                "Elige tus hábitos",
+                                                size=14,
+                                                color=ft.Colors.BLUE_GREY_600,
+                                            ),
+                                            ft.Text(
+                                                f"{len(estado['habitos_configuracion'])} seleccionados",
+                                                size=14,
+                                                color=ft.Colors.BLUE_600,
+                                            ),
+                                        ],
+                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                    )
                                 ),
 
                                 ft.Divider(),
@@ -1076,11 +1154,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                         ),
                     ),
 
-                    boton_principal(
-                        "Guardar mis hábitos",
-                        ft.Icons.SAVE,
-                        guardar_configuracion_habitos,
-                    ),
+                    boton_guardar_habitos,
                 ],
                 spacing=20,
                 scroll=ft.ScrollMode.AUTO,
@@ -1093,6 +1167,36 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         mis_habitos = obtener_mis_habitos()
         estado["habitos_registro"] = mis_habitos
 
+        boton_guardar_registro = boton_principal(
+            "Guardar registro",
+            ft.Icons.SAVE,
+            guardar_registro,
+        )
+
+        boton_cambiar_habitos = ft.Button(
+            content="Cambiar mis hábitos",
+            icon=ft.Icons.EDIT,
+            on_click=cambiar_a_configuracion,
+        )
+
+        controles_botones = (
+            ft.Column(
+                controls=[
+                    boton_guardar_registro,
+                    boton_cambiar_habitos,
+                ],
+                spacing=12,
+            )
+            if es_movil()
+            else ft.Row(
+                controls=[
+                    boton_guardar_registro,
+                    boton_cambiar_habitos,
+                ],
+                spacing=12,
+            )
+        )
+
         contenido.content = ft.Column(
             controls=[
                 texto_titulo("Registro de hábitos"),
@@ -1101,23 +1205,41 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                 ),
 
                 tarjeta(
-                    width=720,
+                    width=ancho_card,
                     content=ft.Column(
                         controls=[
-                            ft.Row(
-                                controls=[
-                                    ft.Text(
-                                        "Progreso de hoy",
-                                        size=14,
-                                        color=ft.Colors.BLUE_GREY_600,
-                                    ),
-                                    ft.Text(
-                                        f"{len(estado['habitos_seleccionados'])} de {len(mis_habitos)} hábitos",
-                                        size=14,
-                                        color=ft.Colors.BLUE_600,
-                                    ),
-                                ],
-                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            (
+                                ft.Column(
+                                    controls=[
+                                        ft.Text(
+                                            "Progreso de hoy",
+                                            size=14,
+                                            color=ft.Colors.BLUE_GREY_600,
+                                        ),
+                                        ft.Text(
+                                            f"{len(estado['habitos_seleccionados'])} de {len(mis_habitos)} hábitos",
+                                            size=14,
+                                            color=ft.Colors.BLUE_600,
+                                        ),
+                                    ],
+                                    spacing=4,
+                                )
+                                if es_movil()
+                                else ft.Row(
+                                    controls=[
+                                        ft.Text(
+                                            "Progreso de hoy",
+                                            size=14,
+                                            color=ft.Colors.BLUE_GREY_600,
+                                        ),
+                                        ft.Text(
+                                            f"{len(estado['habitos_seleccionados'])} de {len(mis_habitos)} hábitos",
+                                            size=14,
+                                            color=ft.Colors.BLUE_600,
+                                        ),
+                                    ],
+                                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                )
                             ),
 
                             ft.Divider(),
@@ -1131,22 +1253,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                     ),
                 ),
 
-                ft.Row(
-                    controls=[
-                        boton_principal(
-                            "Guardar registro",
-                            ft.Icons.SAVE,
-                            guardar_registro,
-                        ),
-
-                        ft.Button(
-                            content="Cambiar mis hábitos",
-                            icon=ft.Icons.EDIT,
-                            on_click=cambiar_a_configuracion,
-                        ),
-                    ],
-                    spacing=12,
-                ),
+                controles_botones,
             ],
             spacing=20,
             scroll=ft.ScrollMode.AUTO,
@@ -1258,8 +1365,14 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         dias = estadisticas.get("dias", 0)
         cumplidos = estadisticas.get("cumplidos", 0)
 
+        try:
+            ancho_card = ancho_movil() if es_movil() else 720
+        except Exception:
+            ancho_card = 320 if es_movil() else 720
+
         if dias == 0:
             mensaje_progreso = tarjeta(
+                width=ancho_card if es_movil() else None,
                 content=ft.Text(
                     "Aún no tienes registros. Comienza a registrar tus hábitos para ver tu progreso.",
                     size=14,
@@ -1269,6 +1382,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             )
         else:
             mensaje_progreso = tarjeta(
+                width=ancho_card if es_movil() else None,
                 content=ft.Text(
                     "Tu progreso se está calculando con base en tus registros guardados.",
                     size=14,
@@ -1277,50 +1391,177 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                 color=ft.Colors.GREEN_50,
             )
 
+        if es_movil():
+            tarjeta_dias = tarjeta(
+                width=ancho_card,
+                content=ft.Row(
+                    controls=[
+                        ft.Container(
+                            width=58,
+                            height=58,
+                            border_radius=14,
+                            bgcolor=ft.Colors.BLUE_500,
+                            alignment=ft.Alignment(0, 0),
+                            content=ft.Icon(
+                                ft.Icons.CALENDAR_MONTH,
+                                color=ft.Colors.WHITE,
+                                size=30,
+                            ),
+                        ),
+                        ft.Column(
+                            controls=[
+                                ft.Text(
+                                    str(dias),
+                                    size=28,
+                                    color=ft.Colors.BLUE_600,
+                                    weight=ft.FontWeight.BOLD,
+                                ),
+                                ft.Text(
+                                    "Días registrados",
+                                    size=14,
+                                    color=ft.Colors.BLUE_GREY_700,
+                                ),
+                            ],
+                            spacing=2,
+                            expand=True,
+                        ),
+                    ],
+                    spacing=14,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            )
+
+            tarjeta_cumplidos = tarjeta(
+                width=ancho_card,
+                content=ft.Row(
+                    controls=[
+                        ft.Container(
+                            width=58,
+                            height=58,
+                            border_radius=14,
+                            bgcolor=ft.Colors.CYAN_600,
+                            alignment=ft.Alignment(0, 0),
+                            content=ft.Icon(
+                                ft.Icons.CHECK_CIRCLE,
+                                color=ft.Colors.WHITE,
+                                size=30,
+                            ),
+                        ),
+                        ft.Column(
+                            controls=[
+                                ft.Text(
+                                    str(cumplidos),
+                                    size=28,
+                                    color=ft.Colors.BLUE_600,
+                                    weight=ft.FontWeight.BOLD,
+                                ),
+                                ft.Text(
+                                    "Hábitos cumplidos",
+                                    size=14,
+                                    color=ft.Colors.BLUE_GREY_700,
+                                ),
+                            ],
+                            spacing=2,
+                            expand=True,
+                        ),
+                    ],
+                    spacing=14,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            )
+
+            estadisticas_layout = ft.Column(
+                controls=[
+                    tarjeta_dias,
+                    tarjeta_cumplidos,
+                ],
+                spacing=16,
+            )
+
+            encabezado_recordatorios = ft.Column(
+                controls=[
+                    ft.Text(
+                        "Recordatorios de hábitos",
+                        size=20,
+                        weight=ft.FontWeight.BOLD,
+                        color=ft.Colors.BLUE_GREY_900,
+                    ),
+                    ft.Row(
+                        controls=[
+                            ft.Switch(
+                                label="Activos",
+                                value=estado["recordatorios_activos"],
+                                on_change=cambiar_recordatorios,
+                            ),
+                        ],
+                        alignment=ft.MainAxisAlignment.START,
+                    ),
+                ],
+                spacing=8,
+            )
+
+            boton_probar = ft.Button(
+                content="Probar notificación",
+                icon=ft.Icons.NOTIFICATIONS_ACTIVE,
+                on_click=probar_notificacion,
+            )
+
+        else:
+            estadisticas_layout = ft.Row(
+                controls=[
+                    tarjeta_estadistica(
+                        "Días registrados",
+                        dias,
+                        ft.Icons.CALENDAR_MONTH,
+                        ft.Colors.BLUE_500,
+                    ),
+                    tarjeta_estadistica(
+                        "Hábitos cumplidos",
+                        cumplidos,
+                        ft.Icons.CHECK_CIRCLE,
+                        ft.Colors.CYAN_600,
+                    ),
+                ],
+                spacing=20,
+            )
+
+            encabezado_recordatorios = ft.Row(
+                controls=[
+                    ft.Text(
+                        "Recordatorios de hábitos",
+                        size=20,
+                        weight=ft.FontWeight.BOLD,
+                        color=ft.Colors.BLUE_GREY_900,
+                    ),
+                    ft.Switch(
+                        label="Activos",
+                        value=estado["recordatorios_activos"],
+                        on_change=cambiar_recordatorios,
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            )
+
+            boton_probar = ft.Button(
+                content="Probar notificación",
+                icon=ft.Icons.NOTIFICATIONS_ACTIVE,
+                on_click=probar_notificacion,
+            )
+
         contenido.content = ft.Column(
             controls=[
                 texto_titulo("Seguimiento de avances"),
                 texto_subtitulo("Visualiza tu progreso en el ahorro de agua."),
 
-                ft.Row(
-                    controls=[
-                        tarjeta_estadistica(
-                            "Días registrados",
-                            dias,
-                            ft.Icons.CALENDAR_MONTH,
-                            ft.Colors.BLUE_500,
-                        ),
-                        tarjeta_estadistica(
-                            "Hábitos cumplidos",
-                            cumplidos,
-                            ft.Icons.CHECK_CIRCLE,
-                            ft.Colors.CYAN_600,
-                        ),
-                    ],
-                    spacing=20,
-                ),
+                estadisticas_layout,
 
                 mensaje_progreso,
 
                 tarjeta(
+                    width=ancho_card if es_movil() else None,
                     content=ft.Column(
                         controls=[
-                            ft.Row(
-                                controls=[
-                                    ft.Text(
-                                        "Recordatorios de hábitos",
-                                        size=20,
-                                        weight=ft.FontWeight.BOLD,
-                                        color=ft.Colors.BLUE_GREY_900,
-                                    ),
-                                    ft.Switch(
-                                        label="Activos",
-                                        value=estado["recordatorios_activos"],
-                                        on_change=cambiar_recordatorios,
-                                    ),
-                                ],
-                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                            ),
+                            encabezado_recordatorios,
 
                             ft.Text(
                                 "La app enviará avisos para recordar hábitos de ahorro de agua durante el uso.",
@@ -1330,11 +1571,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
 
                             menu_frecuencia_recordatorios(),
 
-                            ft.Button(
-                                content="Probar notificación",
-                                icon=ft.Icons.NOTIFICATIONS_ACTIVE,
-                                on_click=probar_notificacion,
-                            ),
+                            boton_probar,
 
                             lista_notificaciones_recientes(),
                         ],
@@ -1345,6 +1582,8 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             spacing=20,
             scroll=ft.ScrollMode.AUTO,
         )
+
+        page.update()
 
     def vista_historial():
         try:
@@ -1359,13 +1598,16 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             print("Error al cargar historial desde BD:", error)
             registros_bd = []
 
+        ancho_card = ancho_movil() if es_movil() else 720
+
         if not registros_bd:
             contenido.content = ft.Column(
                 controls=[
                     texto_titulo("Historial"),
                     texto_subtitulo("Consulta tus registros anteriores por fecha."),
+
                     tarjeta(
-                        width=720,
+                        width=ancho_card,
                         color=ft.Colors.BLUE_50,
                         content=ft.Column(
                             controls=[
@@ -1378,6 +1620,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                                     "No hay registros en el historial. Comienza a registrar tus hábitos diarios.",
                                     size=14,
                                     color=ft.Colors.BLUE_700,
+                                    text_align=ft.TextAlign.CENTER,
                                 ),
                             ],
                             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -1408,20 +1651,49 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             controles_habitos = []
 
             for registro in registros_fecha:
-                nombre_habito = registro.get("habito", {}).get(
-                    "nombre_habito",
-                    "Hábito no encontrado"
-                )
+                habito_data = registro.get("habito", {})
+
+                if isinstance(habito_data, dict):
+                    nombre_habito = habito_data.get(
+                        "nombre_habito",
+                        "Hábito no encontrado"
+                    )
+                else:
+                    nombre_habito = str(habito_data)
 
                 hora_registro = str(registro.get("hora") or "")[:5]
 
-                if hora_registro:
-                    texto_habito = f"{nombre_habito}  •  {hora_registro}"
+                if es_movil():
+                    fila_registro = ft.Row(
+                        controls=[
+                            ft.Icon(
+                                ft.Icons.CHECK_CIRCLE,
+                                color=ft.Colors.GREEN_500,
+                                size=20,
+                            ),
+                            ft.Column(
+                                controls=[
+                                    ft.Text(
+                                        nombre_habito,
+                                        size=14,
+                                        color=ft.Colors.BLUE_GREY_700,
+                                        weight=ft.FontWeight.W_500,
+                                    ),
+                                    ft.Text(
+                                        hora_registro if hora_registro else "Sin hora",
+                                        size=12,
+                                        color=ft.Colors.BLUE_GREY_500,
+                                    ),
+                                ],
+                                spacing=2,
+                                expand=True,
+                            ),
+                        ],
+                        spacing=10,
+                        vertical_alignment=ft.CrossAxisAlignment.START,
+                    )
                 else:
-                    texto_habito = nombre_habito
-
-                controles_habitos.append(
-                    ft.Row(
+                    fila_registro = ft.Row(
                         controls=[
                             ft.Icon(
                                 ft.Icons.CHECK_CIRCLE,
@@ -1429,31 +1701,38 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                                 size=17,
                             ),
                             ft.Text(
-                                texto_habito,
+                                nombre_habito,
                                 size=13,
                                 color=ft.Colors.BLUE_GREY_700,
+                                expand=True,
+                            ),
+                            ft.Text(
+                                hora_registro,
+                                size=13,
+                                color=ft.Colors.BLUE_GREY_600,
                             ),
                         ],
                         spacing=8,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     )
-                )
+
+                controles_habitos.append(fila_registro)
 
             tarjetas_historial.append(
                 tarjeta(
-                    expand=True,
+                    width=ancho_card,
                     content=ft.Column(
                         controls=[
                             ft.Text(
                                 f"Fecha: {fecha}",
-                                size=15,
+                                size=16 if es_movil() else 15,
                                 weight=ft.FontWeight.BOLD,
                                 color=ft.Colors.BLUE_700,
                             ),
                             ft.Divider(),
                             *controles_habitos,
                         ],
-                        spacing=8,
+                        spacing=10,
                     ),
                 )
             )
@@ -1462,9 +1741,10 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             controls=[
                 texto_titulo("Historial"),
                 texto_subtitulo("Consulta tus registros anteriores por fecha."),
+
                 ft.Column(
                     controls=tarjetas_historial,
-                    spacing=15,
+                    spacing=16 if es_movil() else 15,
                 ),
             ],
             spacing=20,
@@ -1473,33 +1753,91 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
 
         page.update()
 
-    def tarjeta_recomendacion(rec):
-        return tarjeta(
-            expand=True,
-            height=185,
+    def tarjeta_recomendacion(titulo, descripcion, icono):
+        if es_movil():
+            return ft.Container(
+                width=ancho_movil(),
+                padding=18,
+                bgcolor=ft.Colors.WHITE,
+                border_radius=18,
+                shadow=ft.BoxShadow(
+                    spread_radius=1,
+                    blur_radius=18,
+                    color=ft.Colors.BLUE_GREY_100,
+                    offset=ft.Offset(0, 4),
+                ),
+                content=ft.Row(
+                    controls=[
+                        ft.Container(
+                            width=58,
+                            height=58,
+                            border_radius=14,
+                            bgcolor=ft.Colors.BLUE_500,
+                            alignment=ft.Alignment(0, 0),
+                            content=ft.Icon(
+                                icono,
+                                color=ft.Colors.WHITE,
+                                size=30,
+                            ),
+                        ),
+                        ft.Column(
+                            controls=[
+                                ft.Text(
+                                    titulo,
+                                    size=18,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=ft.Colors.BLUE_GREY_900,
+                                ),
+                                ft.Text(
+                                    descripcion,
+                                    size=13,
+                                    color=ft.Colors.BLUE_GREY_600,
+                                ),
+                            ],
+                            spacing=6,
+                            expand=True,
+                        ),
+                    ],
+                    spacing=14,
+                    vertical_alignment=ft.CrossAxisAlignment.START,
+                ),
+            )
+
+        return ft.Container(
+            width=190,
+            padding=20,
+            bgcolor=ft.Colors.WHITE,
+            border_radius=18,
+            shadow=ft.BoxShadow(
+                spread_radius=1,
+                blur_radius=18,
+                color=ft.Colors.BLUE_GREY_100,
+                offset=ft.Offset(0, 4),
+            ),
             content=ft.Column(
                 controls=[
                     ft.Container(
-                        width=48,
-                        height=48,
-                        border_radius=10,
+                        width=60,
+                        height=60,
+                        border_radius=14,
                         bgcolor=ft.Colors.BLUE_500,
+                        alignment=ft.Alignment(0, 0),
                         content=ft.Icon(
-                            rec["icono"],
+                            icono,
                             color=ft.Colors.WHITE,
-                            size=24,
+                            size=32,
                         ),
                     ),
                     ft.Text(
-                        rec["titulo"],
-                        size=17,
+                        titulo,
+                        size=18,
                         weight=ft.FontWeight.BOLD,
                         color=ft.Colors.BLUE_GREY_900,
                     ),
                     ft.Text(
-                        rec["descripcion"],
+                        descripcion,
                         size=13,
-                        color=ft.Colors.BLUE_GREY_700,
+                        color=ft.Colors.BLUE_GREY_600,
                     ),
                 ],
                 spacing=12,
@@ -1507,6 +1845,88 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         )
 
     def vista_recomendaciones():
+        tarjetas_movil = ft.Column(
+            controls=[
+                tarjeta_recomendacion(
+                    recomendaciones[0]["titulo"],
+                    recomendaciones[0]["descripcion"],
+                    recomendaciones[0]["icono"],
+                ),
+                tarjeta_recomendacion(
+                    recomendaciones[1]["titulo"],
+                    recomendaciones[1]["descripcion"],
+                    recomendaciones[1]["icono"],
+                ),
+                tarjeta_recomendacion(
+                    recomendaciones[2]["titulo"],
+                    recomendaciones[2]["descripcion"],
+                    recomendaciones[2]["icono"],
+                ),
+                tarjeta_recomendacion(
+                    recomendaciones[3]["titulo"],
+                    recomendaciones[3]["descripcion"],
+                    recomendaciones[3]["icono"],
+                ),
+                tarjeta_recomendacion(
+                    recomendaciones[4]["titulo"],
+                    recomendaciones[4]["descripcion"],
+                    recomendaciones[4]["icono"],
+                ),
+                tarjeta_recomendacion(
+                    recomendaciones[5]["titulo"],
+                    recomendaciones[5]["descripcion"],
+                    recomendaciones[5]["icono"],
+                ),
+            ],
+            spacing=16,
+        )
+
+        tarjetas_escritorio = ft.Column(
+            controls=[
+                ft.Row(
+                    controls=[
+                        tarjeta_recomendacion(
+                            recomendaciones[0]["titulo"],
+                            recomendaciones[0]["descripcion"],
+                            recomendaciones[0]["icono"],
+                        ),
+                        tarjeta_recomendacion(
+                            recomendaciones[1]["titulo"],
+                            recomendaciones[1]["descripcion"],
+                            recomendaciones[1]["icono"],
+                        ),
+                        tarjeta_recomendacion(
+                            recomendaciones[2]["titulo"],
+                            recomendaciones[2]["descripcion"],
+                            recomendaciones[2]["icono"],
+                        ),
+                    ],
+                    spacing=20,
+                ),
+                ft.Row(
+                    controls=[
+                        tarjeta_recomendacion(
+                            recomendaciones[3]["titulo"],
+                            recomendaciones[3]["descripcion"],
+                            recomendaciones[3]["icono"],
+                        ),
+                        tarjeta_recomendacion(
+                            recomendaciones[4]["titulo"],
+                            recomendaciones[4]["descripcion"],
+                            recomendaciones[4]["icono"],
+                        ),
+                        tarjeta_recomendacion(
+                            recomendaciones[5]["titulo"],
+                            recomendaciones[5]["descripcion"],
+                            recomendaciones[5]["icono"],
+                        ),
+                    ],
+                    spacing=20,
+                ),
+            ],
+            spacing=20,
+        )
+
         contenido.content = ft.Column(
             controls=[
                 texto_titulo("Recomendaciones"),
@@ -1514,25 +1934,10 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                     "Consejos breves sobre ahorro, prevención de fugas, reutilización y reducción de desperdicio."
                 ),
 
-                ft.Row(
-                    controls=[
-                        tarjeta_recomendacion(recomendaciones[0]),
-                        tarjeta_recomendacion(recomendaciones[1]),
-                        tarjeta_recomendacion(recomendaciones[2]),
-                    ],
-                    spacing=20,
-                ),
-
-                ft.Row(
-                    controls=[
-                        tarjeta_recomendacion(recomendaciones[3]),
-                        tarjeta_recomendacion(recomendaciones[4]),
-                        tarjeta_recomendacion(recomendaciones[5]),
-                    ],
-                    spacing=20,
-                ),
+                tarjetas_movil if es_movil() else tarjetas_escritorio,
 
                 ft.Container(
+                    width=ancho_movil() if es_movil() else None,
                     padding=24,
                     border_radius=12,
                     gradient=ft.LinearGradient(
@@ -1564,6 +1969,8 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             spacing=20,
             scroll=ft.ScrollMode.AUTO,
         )
+
+        page.update()
 
     def cambiar_vista(vista):
         estado["vista"] = vista
@@ -1680,12 +2087,12 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                 ft.Container(
                     content=contenido,
                     expand=True,
-                   padding=ft.Padding(
-                    left=16,
-                    right=16,
-                    top=10,
-                    bottom=110,
-                ),
+                    padding=ft.Padding(
+                        left=12,
+                        right=12,
+                        top=10,
+                        bottom=110,
+                    ),
                 ),
             ],
             expand=True,
