@@ -169,7 +169,7 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
 
     def es_movil():
         ancho = page.width or 1200
-        return ancho < 700
+        return ancho < 1000
     
     def cargar_habitos():
         try:
@@ -697,31 +697,60 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                     color=ft.Colors.BLUE_GREY_900,
                 ),
 
-                ft.Row(
-                    controls=[
-                        tarjeta_inicio(
-                            "Registro de hábitos",
-                            "Marca los hábitos que cumpliste hoy.",
-                            ft.Icons.LIST_ALT,
-                            "registro",
-                            ft.Colors.BLUE_500,
-                        ),
-                        tarjeta_inicio(
-                            "Historial",
-                            "Consulta registros anteriores.",
-                            ft.Icons.CALENDAR_MONTH,
-                            "historial",
-                            ft.Colors.LIGHT_BLUE_500,
-                        ),
-                        tarjeta_inicio(
-                            "Recomendaciones",
-                            "Consejos para ahorrar agua.",
-                            ft.Icons.LIGHTBULB,
-                            "recomendaciones",
-                            ft.Colors.CYAN_600,
-                        ),
-                    ],
-                    spacing=20,
+                (
+                    ft.Column(
+                        controls=[
+                            tarjeta_inicio(
+                                "Registro de hábitos",
+                                "Marca los hábitos que cumpliste hoy.",
+                                ft.Icons.LIST_ALT,
+                                "registro",
+                                ft.Colors.BLUE_500,
+                            ),
+                            tarjeta_inicio(
+                                "Historial",
+                                "Consulta registros anteriores.",
+                                ft.Icons.CALENDAR_MONTH,
+                                "historial",
+                                ft.Colors.LIGHT_BLUE_500,
+                            ),
+                            tarjeta_inicio(
+                                "Recomendaciones",
+                                "Consejos para ahorrar agua.",
+                                ft.Icons.LIGHTBULB,
+                                "recomendaciones",
+                                ft.Colors.CYAN_600,
+                            ),
+                        ],
+                        spacing=16,
+                    )
+                    if es_movil()
+                    else ft.Row(
+                        controls=[
+                            tarjeta_inicio(
+                                "Registro de hábitos",
+                                "Marca los hábitos que cumpliste hoy.",
+                                ft.Icons.LIST_ALT,
+                                "registro",
+                                ft.Colors.BLUE_500,
+                            ),
+                            tarjeta_inicio(
+                                "Historial",
+                                "Consulta registros anteriores.",
+                                ft.Icons.CALENDAR_MONTH,
+                                "historial",
+                                ft.Colors.LIGHT_BLUE_500,
+                            ),
+                            tarjeta_inicio(
+                                "Recomendaciones",
+                                "Consejos para ahorrar agua.",
+                                ft.Icons.LIGHTBULB,
+                                "recomendaciones",
+                                ft.Colors.CYAN_600,
+                            ),
+                        ],
+                        spacing=20,
+                    )
                 ),
 
                 tarjeta(
@@ -1621,14 +1650,31 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
     if es_movil():
         page.navigation_bar = barra_navegacion_movil()
 
+        page.appbar = ft.AppBar(
+            title=ft.Text(
+                "AguaConsciente",
+                size=18,
+                weight=ft.FontWeight.BOLD,
+            ),
+            bgcolor=ft.Colors.WHITE,
+            actions=[
+                ft.IconButton(
+                    icon=ft.Icons.LOGOUT,
+                    tooltip="Cerrar sesión",
+                    on_click=lambda e: cerrar_sesion(),
+                )
+            ],
+        )
+
         layout = ft.Container(
             content=contenido,
             expand=True,
-            padding=10,
+            padding=ft.padding.only(left=16, right=16, top=20, bottom=90),
         )
 
     else:
         page.navigation_bar = None
+        page.appbar = None
 
         layout = ft.Row(
             controls=[
@@ -1643,10 +1689,18 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
     def ajustar_tamano(e=None):
         alto = alto_ventana()
 
+        try:
+            if e and hasattr(e, "height") and e.height:
+                alto = e.height
+        except Exception:
+            pass
+
         if not es_movil():
             menu_lateral.height = alto
+            contenido.height = alto
+        else:
+            contenido.height = None
 
-        contenido.height = alto
         page.update()
 
     page.on_resize = ajustar_tamano
