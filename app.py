@@ -166,6 +166,11 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             "icono": ft.Icons.CHECK_CIRCLE,
         },
     ]
+
+    def es_movil():
+        ancho = page.width or 1200
+        return ancho < 700
+    
     def cargar_habitos():
         try:
             from database import obtener_habitos
@@ -1564,26 +1569,84 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                 )
             )
 
-    layout = ft.Row(
-        controls=[
-            menu_lateral,
-            contenido,
-        ],
-        expand=True,
-        spacing=0,
-        vertical_alignment=ft.CrossAxisAlignment.START,
-    )
+    def cambiar_vista_desde_barra(e):
+        vistas = [
+            "inicio",
+            "registro",
+            "seguimiento",
+            "historial",
+            "recomendaciones",
+        ]
+
+        vista = vistas[e.control.selected_index]
+        estado["vista"] = vista
+        cambiar_vista(vista)
+
+    def barra_navegacion_movil():
+        indices = {
+            "inicio": 0,
+            "registro": 1,
+            "seguimiento": 2,
+            "historial": 3,
+            "recomendaciones": 4,
+        }
+
+        return ft.NavigationBar(
+            selected_index=indices.get(estado["vista"], 0),
+            destinations=[
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.HOME,
+                    label="Inicio",
+                ),
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.CHECKLIST,
+                    label="Registro",
+                ),
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.INSIGHTS,
+                    label="Avances",
+                ),
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.HISTORY,
+                    label="Historial",
+                ),
+                ft.NavigationBarDestination(
+                    icon=ft.Icons.LIGHTBULB,
+                    label="Consejos",
+                ),
+            ],
+            on_change=cambiar_vista_desde_barra,
+        )
+
+    if es_movil():
+        page.navigation_bar = barra_navegacion_movil()
+
+        layout = ft.Container(
+            content=contenido,
+            expand=True,
+            padding=10,
+        )
+
+    else:
+        page.navigation_bar = None
+
+        layout = ft.Row(
+            controls=[
+                menu_lateral,
+                contenido,
+            ],
+            expand=True,
+            spacing=0,
+            vertical_alignment=ft.CrossAxisAlignment.START,
+        )
 
     def ajustar_tamano(e=None):
         alto = alto_ventana()
 
-        try:
-            if e and hasattr(e, "height") and e.height:
-                alto = e.height
-        except Exception:
-            pass
+        if not es_movil():
+            menu_lateral.height = alto
 
-        menu_lateral.height = alto
+        contenido.height = alto
         page.update()
 
     page.on_resize = ajustar_tamano
