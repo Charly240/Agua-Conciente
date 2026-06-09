@@ -677,63 +677,429 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
             ),
         )
 
+    def banner_inicio():
+        return ft.Container(
+            width=ancho_movil() if es_movil() else None,
+            padding=ft.Padding(
+                left=24 if es_movil() else 30,
+                right=24 if es_movil() else 30,
+                top=28 if es_movil() else 30,
+                bottom=28 if es_movil() else 30,
+            ),
+            border_radius=22,
+            gradient=ft.LinearGradient(
+                begin=ft.Alignment(-1, 0),
+                end=ft.Alignment(1, 0),
+                colors=[
+                    ft.Colors.BLUE_600,
+                    ft.Colors.CYAN_400,
+                ],
+            ),
+            content=(
+                ft.Column(
+                    controls=[
+                        ft.Icon(
+                            ft.Icons.WATER_DROP,
+                            color=ft.Colors.WHITE,
+                            size=52,
+                        ),
+                        ft.Text(
+                            "AguaConsciente",
+                            size=28,
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.Colors.WHITE,
+                        ),
+                        ft.Text(
+                            "Aplicación comunitaria para monitorear hábitos de ahorro de agua.",
+                            size=14,
+                            color=ft.Colors.BLUE_50,
+                        ),
+                        ft.Text(
+                            "Este proyecto ayuda a registrar hábitos, consultar avances y revisar recomendaciones para cuidar el agua en la comunidad.",
+                            size=14,
+                            color=ft.Colors.BLUE_50,
+                        ),
+                    ],
+                    spacing=12,
+                )
+                if es_movil()
+                else ft.Row(
+                    controls=[
+                        ft.Icon(
+                            ft.Icons.WATER_DROP,
+                            color=ft.Colors.WHITE,
+                            size=58,
+                        ),
+                        ft.Column(
+                            controls=[
+                                ft.Text(
+                                    "AguaConsciente",
+                                    size=32,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=ft.Colors.WHITE,
+                                ),
+                                ft.Text(
+                                    "Aplicación comunitaria para monitorear hábitos de ahorro de agua.",
+                                    size=16,
+                                    color=ft.Colors.BLUE_50,
+                                ),
+                                ft.Text(
+                                    "Este proyecto ayuda a registrar hábitos, consultar avances y revisar recomendaciones para cuidar el agua en la comunidad.",
+                                    size=15,
+                                    color=ft.Colors.BLUE_50,
+                                ),
+                            ],
+                            spacing=10,
+                            expand=True,
+                        ),
+                    ],
+                    spacing=20,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                )
+            ),
+        )
 
-    def vista_inicio():
-        contenido.content = ft.Column(
-            controls=[
-                ft.Container(
-                    padding=30,
-                    border_radius=14,
-                    gradient=ft.LinearGradient(
-                        begin=ft.Alignment(-1, 0),
-                        end=ft.Alignment(1, 0),
-                        colors=[
-                            ft.Colors.BLUE_600,
-                            ft.Colors.CYAN_400,
-                        ],
+
+    def tarjeta_recordatorio_inicio():
+        if es_movil():
+            return tarjeta(
+                width=ancho_movil(),
+                content=ft.Column(
+                    controls=[
+                        ft.Row(
+                            controls=[
+                                ft.Icon(
+                                    ft.Icons.NOTIFICATIONS_ACTIVE
+                                    if estado["recordatorios_activos"]
+                                    else ft.Icons.NOTIFICATIONS_OFF,
+                                    color=ft.Colors.BLUE_500
+                                    if estado["recordatorios_activos"]
+                                    else ft.Colors.BLUE_GREY_400,
+                                    size=28,
+                                ),
+                                ft.Text(
+                                    "Recordatorios de hábitos",
+                                    size=18,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=ft.Colors.BLUE_GREY_900,
+                                    expand=True,
+                                ),
+                            ],
+                            spacing=10,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        ),
+                        ft.Text(
+                            "Activa los avisos para mantener tus hábitos de ahorro de agua.",
+                            size=13,
+                            color=ft.Colors.BLUE_GREY_600,
+                        ),
+                        ft.Switch(
+                            label="Activos",
+                            value=estado["recordatorios_activos"],
+                            on_change=cambiar_recordatorios,
+                        ),
+                    ],
+                    spacing=12,
+                ),
+            )
+
+        return tarjeta(
+            content=ft.Row(
+                controls=[
+                    ft.Icon(
+                        ft.Icons.NOTIFICATIONS_ACTIVE
+                        if estado["recordatorios_activos"]
+                        else ft.Icons.NOTIFICATIONS_OFF,
+                        color=ft.Colors.BLUE_500
+                        if estado["recordatorios_activos"]
+                        else ft.Colors.BLUE_GREY_400,
+                        size=28,
                     ),
-                    shadow=ft.BoxShadow(
-                        blur_radius=10,
-                        spread_radius=1,
-                        color=ft.Colors.BLUE_GREY_200,
-                    ),
-                    content=ft.Column(
+                    ft.Column(
                         controls=[
-                            ft.Row(
-                                controls=[
-                                    ft.Icon(
-                                        ft.Icons.WATER_DROP,
-                                        color=ft.Colors.WHITE,
-                                        size=46,
-                                    ),
-                                    ft.Column(
-                                        controls=[
-                                            ft.Text(
-                                                "AguaConsciente",
-                                                size=34,
-                                                weight=ft.FontWeight.BOLD,
-                                                color=ft.Colors.WHITE,
-                                            ),
-                                            ft.Text(
-                                                "Aplicación comunitaria para monitorear hábitos de ahorro de agua.",
-                                                size=15,
-                                                color=ft.Colors.BLUE_50,
-                                            ),
-                                        ],
-                                        spacing=4,
-                                    ),
-                                ],
-                                spacing=15,
+                            ft.Text(
+                                "Recordatorios de hábitos",
+                                size=18,
+                                weight=ft.FontWeight.BOLD,
+                                color=ft.Colors.BLUE_GREY_900,
                             ),
                             ft.Text(
-                                "Este proyecto ayuda a registrar hábitos, consultar avances y revisar recomendaciones para cuidar el agua en la comunidad.",
-                                size=14,
-                                color=ft.Colors.BLUE_50,
+                                "Activa los avisos para mantener tus hábitos de ahorro de agua.",
+                                size=13,
+                                color=ft.Colors.BLUE_GREY_600,
                             ),
                         ],
-                        spacing=18,
+                        expand=True,
+                        spacing=4,
                     ),
+                    ft.Switch(
+                        label="Activos",
+                        value=estado["recordatorios_activos"],
+                        on_change=cambiar_recordatorios,
+                    ),
+                ],
+                spacing=14,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+        )
+
+
+    def vista_inicio():
+        ancho_card = ancho_movil() if es_movil() else None
+
+        banner = ft.Container(
+            width=ancho_card,
+            padding=ft.Padding(
+                left=24 if es_movil() else 30,
+                right=24 if es_movil() else 30,
+                top=28 if es_movil() else 30,
+                bottom=28 if es_movil() else 30,
+            ),
+            border_radius=22,
+            gradient=ft.LinearGradient(
+                begin=ft.Alignment(-1, 0),
+                end=ft.Alignment(1, 0),
+                colors=[
+                    ft.Colors.BLUE_600,
+                    ft.Colors.CYAN_400,
+                ],
+            ),
+            shadow=ft.BoxShadow(
+                blur_radius=10,
+                spread_radius=1,
+                color=ft.Colors.BLUE_GREY_200,
+            ),
+            content=(
+                ft.Column(
+                    controls=[
+                        ft.Icon(
+                            ft.Icons.WATER_DROP,
+                            color=ft.Colors.WHITE,
+                            size=52,
+                        ),
+                        ft.Text(
+                            "AguaConsciente",
+                            size=28,
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.Colors.WHITE,
+                        ),
+                        ft.Text(
+                            "Aplicación comunitaria para monitorear hábitos de ahorro de agua.",
+                            size=14,
+                            color=ft.Colors.BLUE_50,
+                        ),
+                        ft.Text(
+                            "Este proyecto ayuda a registrar hábitos, consultar avances y revisar recomendaciones para cuidar el agua en la comunidad.",
+                            size=14,
+                            color=ft.Colors.BLUE_50,
+                        ),
+                    ],
+                    spacing=12,
+                )
+                if es_movil()
+                else ft.Column(
+                    controls=[
+                        ft.Row(
+                            controls=[
+                                ft.Icon(
+                                    ft.Icons.WATER_DROP,
+                                    color=ft.Colors.WHITE,
+                                    size=46,
+                                ),
+                                ft.Column(
+                                    controls=[
+                                        ft.Text(
+                                            "AguaConsciente",
+                                            size=34,
+                                            weight=ft.FontWeight.BOLD,
+                                            color=ft.Colors.WHITE,
+                                        ),
+                                        ft.Text(
+                                            "Aplicación comunitaria para monitorear hábitos de ahorro de agua.",
+                                            size=15,
+                                            color=ft.Colors.BLUE_50,
+                                        ),
+                                    ],
+                                    spacing=4,
+                                    expand=True,
+                                ),
+                            ],
+                            spacing=18,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        ),
+                        ft.Text(
+                            "Este proyecto ayuda a registrar hábitos, consultar avances y revisar recomendaciones para cuidar el agua en la comunidad.",
+                            size=14,
+                            color=ft.Colors.BLUE_50,
+                        ),
+                    ],
+                    spacing=18,
+                )
+            ),
+        )
+
+        tarjetas_inicio = (
+            ft.Column(
+                controls=[
+                    tarjeta_inicio(
+                        "Registro de hábitos",
+                        "Marca los hábitos que cumpliste hoy.",
+                        ft.Icons.LIST_ALT,
+                        "registro",
+                        ft.Colors.BLUE_500,
+                    ),
+                    tarjeta_inicio(
+                        "Historial",
+                        "Consulta registros anteriores.",
+                        ft.Icons.CALENDAR_MONTH,
+                        "historial",
+                        ft.Colors.LIGHT_BLUE_500,
+                    ),
+                    tarjeta_inicio(
+                        "Recomendaciones",
+                        "Consejos para ahorrar agua.",
+                        ft.Icons.LIGHTBULB,
+                        "recomendaciones",
+                        ft.Colors.CYAN_600,
+                    ),
+                ],
+                spacing=16,
+            )
+            if es_movil()
+            else ft.Row(
+                controls=[
+                    tarjeta_inicio(
+                        "Registro de hábitos",
+                        "Marca los hábitos que cumpliste hoy.",
+                        ft.Icons.LIST_ALT,
+                        "registro",
+                        ft.Colors.BLUE_500,
+                    ),
+                    tarjeta_inicio(
+                        "Historial",
+                        "Consulta registros anteriores.",
+                        ft.Icons.CALENDAR_MONTH,
+                        "historial",
+                        ft.Colors.LIGHT_BLUE_500,
+                    ),
+                    tarjeta_inicio(
+                        "Recomendaciones",
+                        "Consejos para ahorrar agua.",
+                        ft.Icons.LIGHTBULB,
+                        "recomendaciones",
+                        ft.Colors.CYAN_600,
+                    ),
+                ],
+                spacing=20,
+            )
+        )
+
+        tarjeta_recordatorios = (
+            tarjeta(
+                width=ancho_card,
+                content=ft.Column(
+                    controls=[
+                        ft.Row(
+                            controls=[
+                                ft.Icon(
+                                    ft.Icons.NOTIFICATIONS_ACTIVE
+                                    if estado["recordatorios_activos"]
+                                    else ft.Icons.NOTIFICATIONS_OFF,
+                                    color=ft.Colors.BLUE_600
+                                    if estado["recordatorios_activos"]
+                                    else ft.Colors.BLUE_GREY_400,
+                                    size=28,
+                                ),
+                                ft.Text(
+                                    "Recordatorios de hábitos",
+                                    size=18,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=ft.Colors.BLUE_GREY_900,
+                                    expand=True,
+                                ),
+                            ],
+                            spacing=10,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        ),
+                        ft.Text(
+                            "Activa o desactiva los avisos para mantener tus hábitos de ahorro de agua.",
+                            size=13,
+                            color=ft.Colors.BLUE_GREY_700,
+                        ),
+                        ft.Row(
+                            controls=[
+                                ft.Switch(
+                                    label="Activos" if estado["recordatorios_activos"] else "Inactivos",
+                                    value=estado["recordatorios_activos"],
+                                    on_change=cambiar_recordatorios,
+                                ),
+                                ft.Button(
+                                    content="Probar notificación",
+                                    icon=ft.Icons.NOTIFICATIONS,
+                                    on_click=probar_notificacion,
+                                ),
+                            ],
+                            spacing=10,
+                            wrap=True,
+                        ),
+                    ],
+                    spacing=12,
                 ),
+            )
+            if es_movil()
+            else tarjeta(
+                content=ft.Row(
+                    controls=[
+                        ft.Icon(
+                            ft.Icons.NOTIFICATIONS_ACTIVE
+                            if estado["recordatorios_activos"]
+                            else ft.Icons.NOTIFICATIONS_OFF,
+                            color=ft.Colors.BLUE_600
+                            if estado["recordatorios_activos"]
+                            else ft.Colors.BLUE_GREY_400,
+                            size=32,
+                        ),
+                        ft.Column(
+                            controls=[
+                                ft.Text(
+                                    "Recordatorios de hábitos",
+                                    size=18,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=ft.Colors.BLUE_GREY_900,
+                                ),
+                                ft.Text(
+                                    "Activa o desactiva los avisos para mantener tus hábitos de ahorro de agua.",
+                                    size=13,
+                                    color=ft.Colors.BLUE_GREY_700,
+                                ),
+                            ],
+                            spacing=4,
+                            expand=True,
+                        ),
+                        ft.Switch(
+                            value=estado["recordatorios_activos"],
+                            on_change=cambiar_recordatorios,
+                        ),
+                        ft.Text(
+                            "Activos" if estado["recordatorios_activos"] else "Inactivos",
+                            size=13,
+                            color=ft.Colors.BLUE_GREY_500,
+                        ),
+                        ft.Button(
+                            content="Probar notificación",
+                            icon=ft.Icons.NOTIFICATIONS,
+                            on_click=probar_notificacion,
+                        ),
+                    ],
+                    spacing=15,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            )
+        )
+
+        contenido.content = ft.Column(
+            controls=[
+                banner,
 
                 ft.Text(
                     f"Hola, {nombre_usuario}",
@@ -749,116 +1115,15 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
                     color=ft.Colors.BLUE_GREY_900,
                 ),
 
-                (
-                    ft.Column(
-                        controls=[
-                            tarjeta_inicio(
-                                "Registro de hábitos",
-                                "Marca los hábitos que cumpliste hoy.",
-                                ft.Icons.LIST_ALT,
-                                "registro",
-                                ft.Colors.BLUE_500,
-                            ),
-                            tarjeta_inicio(
-                                "Historial",
-                                "Consulta registros anteriores.",
-                                ft.Icons.CALENDAR_MONTH,
-                                "historial",
-                                ft.Colors.LIGHT_BLUE_500,
-                            ),
-                            tarjeta_inicio(
-                                "Recomendaciones",
-                                "Consejos para ahorrar agua.",
-                                ft.Icons.LIGHTBULB,
-                                "recomendaciones",
-                                ft.Colors.CYAN_600,
-                            ),
-                        ],
-                        spacing=16,
-                    )
-                    if es_movil()
-                    else ft.Row(
-                        controls=[
-                            tarjeta_inicio(
-                                "Registro de hábitos",
-                                "Marca los hábitos que cumpliste hoy.",
-                                ft.Icons.LIST_ALT,
-                                "registro",
-                                ft.Colors.BLUE_500,
-                            ),
-                            tarjeta_inicio(
-                                "Historial",
-                                "Consulta registros anteriores.",
-                                ft.Icons.CALENDAR_MONTH,
-                                "historial",
-                                ft.Colors.LIGHT_BLUE_500,
-                            ),
-                            tarjeta_inicio(
-                                "Recomendaciones",
-                                "Consejos para ahorrar agua.",
-                                ft.Icons.LIGHTBULB,
-                                "recomendaciones",
-                                ft.Colors.CYAN_600,
-                            ),
-                        ],
-                        spacing=20,
-                    )
-                ),
+                tarjetas_inicio,
 
-                tarjeta(
-                    content=ft.Row(
-                        controls=[
-                            ft.Icon(
-                                ft.Icons.NOTIFICATIONS_ACTIVE
-                                if estado["recordatorios_activos"]
-                                else ft.Icons.NOTIFICATIONS_OFF,
-                                color=ft.Colors.BLUE_600,
-                                size=32,
-                            ),
-
-                            ft.Column(
-                                controls=[
-                                    ft.Text(
-                                        "Recordatorios de hábitos",
-                                        size=18,
-                                        weight=ft.FontWeight.BOLD,
-                                        color=ft.Colors.BLUE_GREY_900,
-                                    ),
-                                    ft.Text(
-                                        "Activa o desactiva los avisos para mantener tus hábitos de ahorro de agua.",
-                                        size=13,
-                                        color=ft.Colors.BLUE_GREY_700,
-                                    ),
-                                ],
-                                spacing=4,
-                                expand=True,
-                            ),
-
-                            ft.Switch(
-                                value=estado["recordatorios_activos"],
-                                on_change=cambiar_recordatorios,
-                            ),
-
-                            ft.Text(
-                                "Activos" if estado["recordatorios_activos"] else "Inactivos",
-                                size=13,
-                                color=ft.Colors.BLUE_GREY_500,
-                            ),
-
-                            ft.Button(
-                                content="Probar notificación",
-                                icon=ft.Icons.NOTIFICATIONS,
-                                on_click=probar_notificacion,
-                            ),
-                        ],
-                        spacing=15,
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    ),
-                ),
+                tarjeta_recordatorios,
             ],
             spacing=22,
             scroll=ft.ScrollMode.AUTO,
         )
+
+        page.update()
 
     def fila_habito(indice, nombre_habito):
         seleccionado = indice in estado["habitos_seleccionados"]
