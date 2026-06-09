@@ -3,6 +3,7 @@ from datetime import date, datetime
 import threading
 import time
 import random
+import asyncio
 
 
 def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
@@ -20,14 +21,20 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
 
     def alto_ventana():
         try:
+            if page.height:
+                return max(720, page.height)
+        except Exception:
+            pass
+
+        try:
             if page.window_height:
-                return page.window_height
+                return max(720, page.window_height)
         except Exception:
             pass
 
         try:
             if page.window.height:
-                return page.window.height
+                return max(720, page.window.height)
         except Exception:
             pass
 
@@ -58,20 +65,23 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
     }
 
     estado = {
-    "vista": "inicio",
-    "habitos_seleccionados": set(),
-    "habitos_configuracion": set(),
-    "habitos_registro": [],
-    "modo_registro": "auto",
-    "registros": [],
-    "notificaciones": [],
-    "recordatorios_activos": True,
-    "hilo_iniciado": False,
+        "vista": "inicio",
+        "habitos_seleccionados": set(),
+        "habitos_configuracion": set(),
+        "habitos_registro": [],
+        "modo_registro": "auto",
+        "registros": [],
+        "notificaciones": [],
+        "recordatorios_activos": True,
+        "hilo_iniciado": False,
 
-    "frecuencia_recordatorios": "2 veces al día",
-    "intervalo_recordatorios": 12 * 60 * 60,
-    "ultimo_recordatorio": time.time(),
-}
+        "frecuencia_recordatorios": "2 veces al día",
+        "intervalo_recordatorios": 12 * 60 * 60,
+        "ultimo_recordatorio": time.time(),
+
+        "ultimo_ancho": None,
+        "ultimo_modo_movil": None,
+    }
 
     try:
         from database import obtener_configuracion_recordatorio
@@ -167,12 +177,33 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
         },
     ]
 
+    def ancho_pantalla():
+        try:
+            if page.width:
+                return page.width
+        except Exception:
+            pass
+
+        try:
+            if page.window_width:
+                return page.window_width
+        except Exception:
+            pass
+
+        try:
+            if page.window.width:
+                return page.window.width
+        except Exception:
+            pass
+
+        return 1200
+
+
     def es_movil():
-        ancho = page.width or 1200
-        return ancho < 1000
+        return ancho_pantalla() < 1000
     
     def ancho_movil():
-        ancho = page.width or 390
+        ancho = ancho_pantalla()
         return max(ancho - 64, 300)
 
 
@@ -2381,20 +2412,63 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
 
     def ajustar_tamano(e=None):
         alto = alto_ventana()
+        ancho = ancho_pantalla()
+        modo_movil = es_movil()
 
         try:
             if e and hasattr(e, "height") and e.height:
-                alto = e.height
+                alto = max(720, e.height)
         except Exception:
             pass
 
-        if not es_movil():
-            menu_lateral.height = alto
-            contenido.height = alto
-        else:
+        try:
+            if e and hasattr(e, "width") and e.width:
+                ancho = e.width
+        except Exception:
+            pass
+
+        if modo_movil:
             contenido.height = None
+            contenido.width = None
+
+            try:
+                page.navigation_bar = barra_navegacion_movil()
+            except Exception:
+                pass
+
+        else:
+            page.navigation_bar = None
+
+            menu_lateral.width = 235
+            menu_lateral.height = alto
+
+            contenido.height = alto
+            contenido.width = None
+            contenido.expand = True
+
+            try:
+                layout.expand = True
+                layout.height = alto
+            except Exception:
+                pass
 
         page.update()
+
+
+    async def recalcular_inicio():
+        try:
+            await asyncio.sleep(0.4)
+            ajustar_tamano()
+            cambiar_vista(estado.get("vista", "inicio"))
+            page.update()
+
+            await asyncio.sleep(0.8)
+            ajustar_tamano()
+            cambiar_vista(estado.get("vista", "inicio"))
+            page.update()
+
+        except Exception as error:
+            print("Error al recalcular layout inicial:", error)
 
     page.on_resize = ajustar_tamano
 
@@ -2403,3 +2477,5 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
     iniciar_recordatorios()
     ajustar_tamano()
     cambiar_vista("inicio")
+
+    page.run_task(recalcular_inicio)
