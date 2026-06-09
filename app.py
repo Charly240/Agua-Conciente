@@ -1649,32 +1649,53 @@ def mostrar_app(page: ft.Page, usuario_actual="Usuario"):
 
     if es_movil():
         page.navigation_bar = barra_navegacion_movil()
+        page.appbar = None
+        page.scroll = ft.ScrollMode.AUTO
 
-        page.appbar = ft.AppBar(
-            title=ft.Text(
-                "AguaConsciente",
-                size=18,
-                weight=ft.FontWeight.BOLD,
+        barra_superior_movil = ft.Container(
+            content=ft.Row(
+                controls=[
+                    ft.Text(
+                        "AguaConsciente",
+                        size=18,
+                        weight=ft.FontWeight.BOLD,
+                        color=ft.Colors.BLUE_GREY_900,
+                    ),
+                    ft.IconButton(
+                        icon=ft.Icons.LOGOUT,
+                        icon_color=ft.Colors.RED_500,
+                        tooltip="Cerrar sesión",
+                        on_click=lambda e: cerrar_sesion(),
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
-            bgcolor=ft.Colors.WHITE,
-            actions=[
-                ft.IconButton(
-                    icon=ft.Icons.LOGOUT,
-                    tooltip="Cerrar sesión",
-                    on_click=lambda e: cerrar_sesion(),
-                )
-            ],
+            padding=ft.Padding(left=16, right=16, top=12, bottom=8),
         )
 
-        layout = ft.Container(
-            content=contenido,
+        layout = ft.Column(
+            controls=[
+                barra_superior_movil,
+                ft.Container(
+                    content=contenido,
+                    expand=True,
+                   padding=ft.Padding(
+                    left=16,
+                    right=16,
+                    top=10,
+                    bottom=110,
+                ),
+                ),
+            ],
             expand=True,
-            padding=ft.padding.only(left=16, right=16, top=20, bottom=90),
+            spacing=0,
         )
 
     else:
         page.navigation_bar = None
         page.appbar = None
+        page.scroll = None
 
         layout = ft.Row(
             controls=[
